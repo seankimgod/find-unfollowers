@@ -1,4 +1,7 @@
+# unfollowers.xyz robots.txt
+
 User-agent: *
 Allow: /
+Crawl-delay: 1
 
 Sitemap: https://unfollowers.xyz/sitemap.xml
