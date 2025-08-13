@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인스타그램 언팔로워 분석기 - 무료 언팔 체크</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: white;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .step {
+            margin-bottom: 30px;
+        }
+
+        .step-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #5a67d8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step-number {
+            background: #5a67d8;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .upload-area {
+            border: 3px dashed #5a67d8;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px 0;
+        }
+
+        .upload-area:hover {
+            background: #f0f2ff;
+            border-color: #4c51bf;
+        }
+
+        .upload-area.dragover {
+            background: #e6fffa;
+            border-color: #38b2ac;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: #0064FF;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 100, 255, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .file-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .file-status.success {
+            background: #f0fff4;
+            border: 2px solid #68d391;
+            color: #2f855a;
+            display: block;
+        }
+
+        .file-status.error {
+            background: #fff5f5;
+            border: 2px solid #fc8181;
+            color: #c53030;
+            display: block;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-center {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-card.followers {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-card.following {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+        }
+
+        .stat-card.unfollowers {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+
+        .stat-card.unfollowers .stat-number {
+            color: #e74c3c;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+        }
+
+        .unfollowers-list {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .unfollowers-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .unfollowers-table th {
+            background: #f5f5f5;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .unfollowers-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .unfollowers-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .unfollowers-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .username-link {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .username-link:hover {
+            text-decoration: underline;
+        }
+
+        .follow-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sort-btn {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .sort-btn:hover {
+            background: #e9e9e9;
+        }
+
+        .sort-btn.active {
+            background: #0064FF;
+            color: white;
+            border-color: #0064FF;
+        }
+
+        .gate-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .gate-modal {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .gate-modal h2 {
+            margin-bottom: 20px;
+            color: #0064ff;
+        }
+
+        .gate-modal p {
+            margin-bottom: 30px;
+            line-height: 1.6;
+            color: #4a5568;
+        }
+
+        .coupang-btn {
+            background: #0064FF;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .coupang-btn:hover {
+            background: #0052d1;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #5a67d8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .guide {
+            background: #e3f2fd;
+            border: 2px solid #0064ff;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .guide.service-intro {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            margin-bottom: 20px;
+            padding: 10px 25px;
+        }
+
+        .guide h3 {
+            color: #0064ff;
+            margin-bottom: 15px;
+        }
+
+        .guide ol {
+            margin-left: 20px;
+            line-height: 1.4;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .guide li {
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        .guide li .highlight {
+            color: #0064FF;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .main-card {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .header p {
+                font-size: 1em;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-number {
+                font-size: 2em;
+            }
+            
+            .gate-modal {
+                max-width: 90%;
+                margin: 10px;
+                padding: 25px;
+            }
+            
+            .gate-modal h2 {
+                font-size: 1.3em;
+                margin-bottom: 15px;
+            }
+            
+            .gate-modal p {
+                font-size: 0.9em;
+                margin-bottom: 20px;
+            }
+            
+            .coupang-btn {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+            
+            .unfollowers-table {
+                font-size: 0.9em;
+            }
+            
+            .unfollowers-table th,
+            .unfollowers-table td {
+                padding: 10px 8px;
+            }
+            
+            .sort-buttons {
+                gap: 5px;
+            }
+            
+            .sort-btn {
+                padding: 6px 12px;
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>인스타그램 언팔로워 분석기</h1>
+            <p>나를 팔로우하지 않는 계정을 쉽게 찾아보세요!</p>
+        </div>
+
+        <div class="main-card">
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #0064ff; margin-bottom: 15px;">📢 언팔로워 분석기란?</h3>
+                <p style="margin-bottom: 0; line-height: 1.6; font-size: 0.9em;">
+                    인스타그램에서 제공하는 데이터 파일을 분석하여 나를 팔로우하지 않는 계정을 확인하는 서비스에요. 본 서비스는 <strong>계정이나 비밀번호를 요구하지 않습니다!</strong> 데이터 파일은 브라우저에서만 처리되며, 별도의 서버에 저장되지 않아요. 안심하고 사용하세요 😎
+                </p>
+            </div>
+
+            <div class="guide">
+                <h3>✅ 인스타그램 팔로워 데이터 다운로드 방법</h3>
+                <ol>
+                    <li>인스타그램에서 오른쪽 위 <strong>☰</strong> (더 보기) 모양을 누르세요</li>
+                    <li><strong><span class="highlight">[계정센터]</span></strong> - <strong><span class="highlight">[내정보 및 권한]</span></strong> - <strong><span class="highlight">[내 정보 내보내기]</span></strong> 클릭</li>
+                    <li><strong><span class="highlight">[내보내기 만들기]</span></strong> - 프로필 선택 후 - <strong><span class="highlight">[기기로 내보내기]</span></strong></li>
+                    <li>알림받을 메일 설정 (설정 안해도 무관)</li>
+                    <li><strong>🚨(중요) <span class="highlight">[정보 맞춤설정]</span></strong>에서 모든 항목 체크박스 해제</li>
+                    <li><strong>🚨(중요) <span class="highlight">[팔로워 및 팔로잉] 항목</span></strong>만 체크</li>
+                    <li><strong>🚨(중요)</strong> 기간 설정 - <strong><span class="highlight">[전체기간]</span></strong>으로 변경</li>
+                    <li><strong>🚨(중요)</strong> 형식 <strong><span class="highlight">[JSON]</span></strong>으로 선택 후 <strong><span class="highlight">[저장]</span></strong></li>
+                    <li><strong><span class="highlight">[내보내기 시작]</span></strong> 클릭</li>
+                    <li>잠시 기다리면 다운로드 버튼 활성화 (통상 5~10분 내외)</li>
+                    <li>다운받은 <strong>압축파일을 그대로</strong> 본 페이지에 첨부한 후 언팔로워 분석하기 버튼 클릭</li>
+                </ol>
+            </div>
+
+            <div class="step">
+                <div class="step-title">
+                    👇 인스타그램 데이터 파일 업로드 👇
+                </div>
+                <div class="upload-area" id="dataUpload">
+                    <div class="upload-icon">📂</div>
+                    <h3>인스타그램에서 받은 압축파일(.zip)을 여기에 드래그하거나 클릭하세요</h3>
+                    <p>다운받은 압축파일을 풀지 말고 그대로 업로드해주세요</p>
+                </div>
+                <input type="file" id="dataFile" class="file-input" accept=".zip">
+                <div id="dataStatus" class="file-status"></div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 30px;">
+                <button class="btn" id="analyzeBtn" disabled>언팔로워 분석하기</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>분석 중입니다...</p>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="main-card">
+                <div class="results-header">
+                    <h2>분석 결과</h2>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                        "누구인가? 누가 나를 언팔했느냐 말이야...! 👿"
+                    </p>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card followers">
+                        <div class="stat-number" id="followingCount">0</div>
+                        <div class="stat-label">팔로잉 수</div>
+                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(내가 팔로우하는 계정)</div>
+                    </div>
+                    <div class="stat-card following">
+                        <div class="stat-number" id="mutualFollowCount">0</div>
+                        <div class="stat-label">맞팔하는 계정 수</div>
+                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(서로 팔로우하는 계정)</div>
+                    </div>
+                    <div class="stat-card unfollowers">
+                        <div class="stat-number" id="unfollowersCount">0</div>
+                        <div class="stat-label">언팔로워 수</div>
+                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(나를 팔로우하지 않는 계정)</div>
+                    </div>
+                </div>
+
+                <div class="btn-center">
+                    <button class="btn" id="viewResultsBtn">상세 결과 보기</button>
+                </div>
+
+                <div class="unfollowers-list" id="unfollowersList" style="display: none;">
+                    <h3 style="margin: 0 0 15px 0;">🚫 나를 팔로우하지 않는 사용자들</h3>
+                    <p style="font-size: 0.85em; color: #666; margin-bottom: 15px; text-align: center;">
+                        * zip 파일을 내려받은 시점 기준의 데이터로, 실시간 현황과 약간의 차이가 있을 수 있습니다.
+                    </p>
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <button class="btn" id="copyAllAccountsBtn" style="font-size: 0.9em; padding: 10px 20px;">
+                            📋 계정 전부 텍스트로 복사하기
+                        </button>
+                    </div>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div class="sort-buttons">
+                            <button class="sort-btn active" id="sortNewest">최신순</button>
+                            <button class="sort-btn" id="sortOldest">오래된순</button>
+                        </div>
+                    </div>
+                    <div id="unfollowersContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 구분선과 안내사항 -->
+    <div style="margin-top: 60px; padding-top: 30px; border-top: 1px solid #e0e0e0; text-align: center; margin-bottom: 40px;">
+        <div style="font-size: 0.9em; color: #666; line-height: 1.6;">
+            <div style="margin-bottom: 15px;">© 2025 인스타그램 언팔로워 분석기</div>
+            <div style="margin-bottom: 5px;">본 서비스는 Meta(Instagram)와 무관한 독립적인 분석 도구입니다.</div>
+            <div>사용자가 업로드한 데이터는 브라우저에서만 처리되며, 서버에 저장되지 않습니다.</div>
+        </div>
+    </div>
+
+    <div class="gate-overlay" id="gateOverlay">
+        <div class="gate-modal">
+            <h2>🎁 결과를 보시려면</h2>
+            <p>
+                광고 수익으로 사이트 운영비를 충당하고 있습니다 🙏<br>
+                아래 링크를 클릭한 후 잠시만 기다려주세요!
+            </p>
+            <a href="https://link.coupang.com/a/cKhD9A" target="_blank" class="coupang-btn" id="coupangLink">
+                (클릭) 쿠팡에서 개발자 원픽 잠깐 구경
+            </a>
+            <p style="margin-top: 20px; font-size: 0.9em; color: #718096;">
+                링크를 클릭하면 5초 후 결과가 표시됩니다.
+            </p>
+            <p style="margin-top: 10px; font-size: 0.8em; color: #718096;">
+                * <strong>쿠팡 파트너스 활동의 일환으로,</strong><br>
+                <strong>제품 구매시 이에 따른 일정액의 수수료를 제공받습니다</strong>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let followersData = null;
+        let followingData = null;
+        let unfollowersResult = [];
+
+        // ZIP 파일 처리를 위한 JSZip 라이브러리 (CDN에서 로드)
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        document.head.appendChild(script);
+
+        // 파일 업로드 설정
+        function setupFileUpload() {
+            const uploadArea = document.getElementById('dataUpload');
+            const fileInput = document.getElementById('dataFile');
+            const status = document.getElementById('dataStatus');
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleZipFile(files[0], status);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleZipFile(e.target.files[0], status);
+                }
+            });
+        }
+
+        async function handleZipFile(file, status) {
+            if (!file.name.endsWith('.zip')) {
+                showStatus(status, 'error', '❌ ZIP 파일만 업로드 가능합니다.');
+                return;
+            }
+
+            showStatus(status, 'success', '📦 압축파일 처리 중...');
+
+            try {
+                // JSZip이 로드될 때까지 대기
+                while (typeof JSZip === 'undefined') {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                const zip = new JSZip();
+                const zipData = await zip.loadAsync(file);
+                
+                let followersFound = false;
+                let followingFound = false;
+
+                // ZIP 파일 내에서 필요한 JSON 파일들 찾기
+                for (let filename in zipData.files) {
+                    const zipFile = zipData.files[filename];
+                    
+                    // 팔로워 파일 찾기 (followers_1.json, followers.json 등)
+                    if ((filename.includes('followers') || filename.includes('follower')) && filename.endsWith('.json')) {
+                        const content = await zipFile.async('text');
+                        try {
+                            const parsed = JSON.parse(content);
+                            // 배열 형태인지 확인 (followers_1.json은 배열)
+                            if (Array.isArray(parsed)) {
+                                followersData = parsed;
+                                followersFound = true;
+                                console.log(`팔로워 파일 발견: ${filename}, 개수: ${parsed.length}`);
+                            }
+                        } catch (e) {
+                            console.error('팔로워 파일 파싱 오류:', e);
+                        }
+                    }
+                    
+                    // 팔로잉 파일 찾기 (following.json)
+                    if (filename.includes('following') && filename.endsWith('.json')) {
+                        const content = await zipFile.async('text');
+                        try {
+                            const parsed = JSON.parse(content);
+                            // relationships_following 키가 있는지 확인
+                            if (parsed.relationships_following) {
+                                followingData = parsed;
+                                followingFound = true;
+                                console.log(`팔로잉 파일 발견: ${filename}, 개수: ${parsed.relationships_following.length}`);
+                            }
+                        } catch (e) {
+                            console.error('팔로잉 파일 파싱 오류:', e);
+                        }
+                    }
+                }
+
+                if (followersFound && followingFound) {
+                    showStatus(status, 'success', `✅ 파일 업로드 완료! 팔로워 ${followersData.length}명, 팔로잉 ${followingData.relationships_following.length}명`);
+                    checkAnalyzeButton();
+                } else {
+                    let missing = [];
+                    if (!followersFound) missing.push('팔로워');
+                    if (!followingFound) missing.push('팔로잉');
+                    showStatus(status, 'error', `❌ ${missing.join(', ')} 데이터를 찾을 수 없습니다.`);
+                }
+
+            } catch (error) {
+                showStatus(status, 'error', '❌ 압축파일 처리 중 오류가 발생했습니다.');
+                console.error('ZIP 처리 오류:', error);
+            }
+        }
+
+        function showStatus(element, type, message) {
+            element.className = `file-status ${type}`;
+            element.textContent = message;
+        }
+
+        function checkAnalyzeButton() {
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            if (followersData && followingData) {
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        function analyzeUnfollowers() {
+            const loading = document.getElementById('loading');
+            const resultsSection = document.getElementById('resultsSection');
+            
+            loading.style.display = 'block';
+
+            setTimeout(() => {
+                try {
+                    // 팔로워 데이터 추출 (배열 형태)
+                    let followers = [];
+                    if (followersData && Array.isArray(followersData)) {
+                        followers = followersData
+                            .filter(item => item.string_list_data && item.string_list_data[0])
+                            .map(item => item.string_list_data[0].value);
+                    }
+
+                    // 팔로잉 데이터 추출 (relationships_following 배열)
+                    let following = [];
+                    if (followingData && followingData.relationships_following && Array.isArray(followingData.relationships_following)) {
+                        following = followingData.relationships_following
+                            .filter(item => item.string_list_data && item.string_list_data[0])
+                            .map(item => item.string_list_data[0].value);
+                    }
+
+                    // 맞팔하는 계정 수 계산 (팔로워이면서 동시에 내가 팔로잉하는 계정)
+                    const mutualFollowCount = followers.filter(follower => following.includes(follower)).length;
+
+                    console.log(`팔로워 ${followers.length}명, 팔로잉 ${following.length}명, 맞팔 ${mutualFollowCount}명`);
+
+                    // 팔로워 사용자명 집합 생성
+                    const followerSet = new Set(followers);
+
+                    // 언팔로워 찾기 (내가 팔로잉하지만 나를 팔로우하지 않는 사람들)
+                    const unfollowerUsernames = following.filter(username => !followerSet.has(username));
+                    
+                    // 언팔로워 상세 정보 생성
+                    unfollowersResult = unfollowerUsernames.map(username => ({
+                        string_list_data: [{ value: username }]
+                    }));
+
+                    console.log(`언팔로워 ${unfollowersResult.length}명 발견:`, unfollowerUsernames);
+
+                    // 결과 표시
+                    document.getElementById('followingCount').textContent = following.length;
+                    document.getElementById('mutualFollowCount').textContent = mutualFollowCount;
+                    document.getElementById('unfollowersCount').textContent = unfollowersResult.length;
+
+                    loading.style.display = 'none';
+                    resultsSection.style.display = 'block';
+                    
+                    // 결과 섹션으로 스크롤
+                    resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+                } catch (error) {
+                    loading.style.display = 'none';
+                    alert('분석 중 오류가 발생했습니다. 파일 형식을 확인해주세요.');
+                    console.error('Analysis error:', error);
+                }
+            }, 2000);
+        }
+
+        let currentSortOrder = 'newest'; // 'newest' 또는 'oldest'
+
+        function showUnfollowersList() {
+            const container = document.getElementById('unfollowersContainer');
+            const list = document.getElementById('unfollowersList');
+            
+            if (unfollowersResult.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #68d391; font-size: 1.2em;">🎉 모든 팔로잉이 당신을 팔로우하고 있습니다!</p>';
+            } else {
+                renderUnfollowersTable();
+            }
+            
+            list.style.display = 'block';
+        }
+
+        function renderUnfollowersTable() {
+            const container = document.getElementById('unfollowersContainer');
+            container.innerHTML = '';
+            
+            // 팔로잉 데이터에서 타임스탬프 정보 가져오기
+            let followingWithDates = followingData.relationships_following.filter(user => {
+                const username = user.string_list_data[0].value;
+                return unfollowersResult.some(unfollower => unfollower.string_list_data[0].value === username);
+            });
+            
+            // 정렬
+            followingWithDates.sort((a, b) => {
+                const timestampA = a.string_list_data[0].timestamp;
+                const timestampB = b.string_list_data[0].timestamp;
+                
+                if (currentSortOrder === 'newest') {
+                    return timestampB - timestampA; // 최신순 (큰 timestamp가 먼저)
+                } else {
+                    return timestampA - timestampB; // 오래된순 (작은 timestamp가 먼저)
+                }
+            });
+            
+            // 테이블 생성
+            const table = document.createElement('table');
+            table.className = 'unfollowers-table';
+            
+            // 테이블 헤더
+            const header = document.createElement('thead');
+            header.innerHTML = `
+                <tr>
+                    <th>계정명</th>
+                    <th>내가 팔로우한 날짜</th>
+                </tr>
+            `;
+            table.appendChild(header);
+            
+            // 테이블 바디
+            const tbody = document.createElement('tbody');
+            
+            followingWithDates.forEach(user => {
+                const username = user.string_list_data[0].value;
+                const timestamp = user.string_list_data[0].timestamp;
+                const date = new Date(timestamp * 1000);
+                const formattedDate = formatFollowDate(date);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <a href="https://www.instagram.com/${username}" target="_blank" class="username-link">
+                            @${username}
+                        </a>
+                    </td>
+                    <td class="follow-date">${formattedDate}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            table.appendChild(tbody);
+            container.appendChild(table);
+        }
+
+        function setSortOrder(order) {
+            currentSortOrder = order;
+            
+            // 버튼 활성화 상태 변경
+            document.getElementById('sortNewest').classList.toggle('active', order === 'newest');
+            document.getElementById('sortOldest').classList.toggle('active', order === 'oldest');
+            
+            // 테이블 다시 렌더링
+            renderUnfollowersTable();
+        }
+
+        function formatFollowDate(date) {
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+            
+            if (diffDays === 1) {
+                return `${formattedDate}, 약 1일 전`;
+            } else if (diffDays < 30) {
+                return `${formattedDate}, 약 ${diffDays}일 전`;
+            } else if (diffDays < 365) {
+                const diffMonths = Math.floor(diffDays / 30);
+                return `${formattedDate}, 약 ${diffMonths}개월 전`;
+            } else {
+                const diffYears = Math.floor(diffDays / 365);
+                return `${formattedDate}, 약 ${diffYears}년 전`;
+            }
+        }
+
+        function showGate() {
+            const overlay = document.getElementById('gateOverlay');
+            overlay.style.display = 'flex';
+            
+            // 쿠팡 링크 클릭 이벤트
+            document.getElementById('coupangLink').addEventListener('click', function() {
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    showUnfollowersList();
+                }, 5000);
+            });
+        }
+
+        // 계정명 전체 복사 기능
+        function copyAllAccounts() {
+            if (unfollowersResult.length === 0) {
+                alert('복사할 계정이 없습니다.');
+                return;
+            }
+
+            // 모든 계정명을 @포함해서 텍스트로 만들기
+            const accountNames = unfollowersResult.map(user => `@${user.string_list_data[0].value}`);
+            const copyText = accountNames.join('\n');
+
+            // 클립보드에 복사
+            navigator.clipboard.writeText(copyText).then(() => {
+                // 성공 메시지
+                const btn = document.getElementById('copyAllAccountsBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ 복사 완료!';
+                btn.style.background = '#10b981';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#0064FF';
+                }, 2000);
+            }).catch(() => {
+                alert('복사에 실패했습니다. 다시 시도해주세요.');
+            });
+        }
+
+        // 이벤트 리스너 설정
+        setupFileUpload();
+
+        document.getElementById('analyzeBtn').addEventListener('click', analyzeUnfollowers);
+        document.getElementById('viewResultsBtn').addEventListener('click', showGate);
+
+        // 정렬 버튼 이벤트 리스너
+        document.getElementById('sortNewest').addEventListener('click', () => setSortOrder('newest'));
+        document.getElementById('sortOldest').addEventListener('click', () => setSortOrder('oldest'));
+
+        // 복사 버튼 이벤트 리스너
+        document.getElementById('copyAllAccountsBtn').addEventListener('click', copyAllAccounts);
+
+        // 오버레이 클릭시 닫기
+        document.getElementById('gateOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
