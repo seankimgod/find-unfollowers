@@ -25,6 +25,9 @@
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#0064FF">
 
+    <!-- Chart.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
     <!-- SEO 메타 태그 추가 -->
     <meta name="description" content="인스타그램 언팔로워 분석기 - 나를 팔로우하지 않는 계정을 무료로 안전하게 찾아보세요. 계정 정보 불필요, 100% 클라이언트 처리">
     <meta name="keywords" content="인스타그램, 언팔로워, 언팔확인, 인스타 분석, 팔로워 체크, 무료 언팔 확인">
@@ -124,6 +127,8 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin: 20px 0;
+            position: relative;
+            user-select: none;
         }
 
         .upload-area:hover {
@@ -206,9 +211,19 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 15px;
             margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
         }
 
         .stat-card {
@@ -218,17 +233,24 @@
             text-align: center;
         }
 
-        .stat-card.followers {
+        /* 각 카드별 고유 스타일 */
+        .stat-card.following {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
 
-        .stat-card.following {
+        .stat-card.followers {
             background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
             color: #333;
         }
 
-        .stat-card.unfollowers {
+        .stat-card.mutual {
             background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+
+        .stat-card.unfollowers {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
             color: #333;
         }
 
@@ -434,6 +456,11 @@
             color: #0064FF;
         }
 
+        /* 차트 컨테이너 스타일 */
+        .chart-section canvas {
+            height: 300px !important;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -504,6 +531,10 @@
                 padding: 6px 12px;
                 font-size: 0.8em;
             }
+
+            #followChart {
+                height: 250px !important;
+            }
         }
     </style>
 </head>
@@ -518,7 +549,7 @@
             <div style="margin-bottom: 20px;">
                 <h3 style="color: #0064ff; margin-bottom: 15px;">📢 언팔로워 분석기란?</h3>
                 <p style="margin-bottom: 0; line-height: 1.6; font-size: 0.9em;">
-                    인스타그램에서 제공하는 데이터 파일을 분석하여 나를 팔로우하지 않는 계정을 확인하는 서비스에요. 본 서비스는 <strong>계정이나 비밀번호를 요구하지 않습니다!</strong> 데이터 파일은 브라우저에서만 처리되며, 별도의 서버에 저장되지 않아요. 안심하고 사용하세요 😎
+                    인스타그램에서 제공하는 데이터 파일을 분석하여 나를 팔로우하지 않는 계정을 확인하는 서비스예요. 본 서비스는 <strong>계정이나 비밀번호를 요구하지 않습니다!</strong> 데이터 파일은 브라우저에서만 처리되며, 별도의 서버에 저장되지 않아요. 안심하고 사용하세요 😎
                 </p>
             </div>
 
@@ -543,7 +574,7 @@
                 <div class="step-title">
                     👇 인스타그램 데이터 파일 업로드 👇
                 </div>
-                <div class="upload-area" id="dataUpload">
+                <div class="upload-area" id="dataUpload" onclick="document.getElementById('dataFile').click();">
                     <div class="upload-icon">📂</div>
                     <h3>인스타그램에서 받은 압축파일(.zip)을 여기에 드래그하거나 클릭하세요</h3>
                     <p>다운받은 압축파일을 풀지 말고 그대로 업로드해주세요</p>
@@ -572,25 +603,41 @@
                 </div>
                 
                 <div class="stats-grid">
-                    <div class="stat-card followers">
+                    <div class="stat-card following">
                         <div class="stat-number" id="followingCount">0</div>
                         <div class="stat-label">팔로잉 수</div>
-                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(내가 팔로우하는 계정)</div>
+                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(내가 남을 팔로잉)</div>
                     </div>
-                    <div class="stat-card following">
+                    <div class="stat-card followers">
+                        <div class="stat-number" id="followersCount">0</div>
+                        <div class="stat-label">팔로워 수</div>
+                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(남이 나를 팔로잉)</div>
+                    </div>
+                    <div class="stat-card mutual">
                         <div class="stat-number" id="mutualFollowCount">0</div>
-                        <div class="stat-label">맞팔하는 계정 수</div>
-                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(서로 팔로우하는 계정)</div>
+                        <div class="stat-label">맞팔 계정 수</div>
+                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(서로 팔로잉)</div>
                     </div>
                     <div class="stat-card unfollowers">
                         <div class="stat-number" id="unfollowersCount">0</div>
                         <div class="stat-label">언팔로워 수</div>
-                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(나를 팔로우하지 않는 계정)</div>
+                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 5px;">(나를 팔로잉하지 않는 계정)</div>
                     </div>
                 </div>
 
                 <div class="btn-center">
                     <button class="btn" id="viewResultsBtn">상세 결과 보기</button>
+                </div>
+
+                <!-- 팔로우 추이 그래프 -->
+                <div class="chart-section" id="chartSection" style="display: none;">
+                    <h3 style="text-align: center; margin: 30px 0 20px 0; color: #333;">📊 팔로워 & 팔로우 추이 분석</h3>
+                    <div style="background: white; border-radius: 15px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <canvas id="followChart" width="400" height="200"></canvas>
+                        <div style="text-align: center; margin-top: 15px; font-size: 0.85em; color: #666;">
+                            * 지난 1년간의 데이터를 분석한 결과입니다
+                        </div>
+                    </div>
                 </div>
 
                 <div class="unfollowers-list" id="unfollowersList" style="display: none;">
@@ -648,6 +695,7 @@
         let followersData = null;
         let followingData = null;
         let unfollowersResult = [];
+        let followChart = null;
 
         // ZIP 파일 처리를 위한 JSZip 라이브러리 (CDN에서 로드)
         const script = document.createElement('script');
@@ -660,8 +708,6 @@
             const fileInput = document.getElementById('dataFile');
             const status = document.getElementById('dataStatus');
 
-            uploadArea.addEventListener('click', () => fileInput.click());
-            
             uploadArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 uploadArea.classList.add('dragover');
@@ -680,7 +726,9 @@
                 }
             });
 
+            // 파일 선택 이벤트
             fileInput.addEventListener('change', (e) => {
+                console.log('File input changed', e.target.files);
                 if (e.target.files.length > 0) {
                     handleZipFile(e.target.files[0], status);
                 }
@@ -816,11 +864,15 @@
 
                     // 결과 표시
                     document.getElementById('followingCount').textContent = following.length;
+                    document.getElementById('followersCount').textContent = followers.length;
                     document.getElementById('mutualFollowCount').textContent = mutualFollowCount;
                     document.getElementById('unfollowersCount').textContent = unfollowersResult.length;
 
                     loading.style.display = 'none';
                     resultsSection.style.display = 'block';
+                    
+                    // 팔로우 추이 그래프 생성
+                    createFollowChart();
                     
                     // 결과 섹션으로 스크롤
                     resultsSection.scrollIntoView({ behavior: 'smooth' });
@@ -831,6 +883,206 @@
                     console.error('Analysis error:', error);
                 }
             }, 2000);
+        }
+
+        // 팔로우 추이 그래프 생성
+        function createFollowChart() {
+            const ctx = document.getElementById('followChart').getContext('2d');
+            
+            // 기존 차트가 있다면 제거
+            if (followChart) {
+                followChart.destroy();
+            }
+            
+            // 데이터 처리: 최근 12개월 간의 데이터 그룹화
+            const chartData = processFollowData();
+            
+            followChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            label: '내가 팔로우한 수',
+                            data: chartData.followingData,
+                            borderColor: '#0064FF',
+                            backgroundColor: 'rgba(0, 100, 255, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#0064FF',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5
+                        },
+                        {
+                            label: '나를 팔로우한 수',
+                            data: chartData.followersData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: '기간',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: '팔로우 수',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // 팔로우 데이터 처리 (최근 12개월 간)
+        function processFollowData() {
+            const now = new Date();
+            const months = [];
+            const labels = [];
+            
+            // 최근 12개월 레이블 생성
+            for (let i = 11; i >= 0; i--) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push(date);
+                const year = String(date.getFullYear()).slice(-2); // 연도 2자리
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                labels.push(`${year}.${month}`);
+            }
+            
+            // 팔로잉 데이터 처리
+            const followingCounts = new Array(12).fill(0);
+            let followingCumulative = 0;
+            
+            if (followingData && followingData.relationships_following) {
+                // 타임스탬프 기준 정렬
+                const sortedFollowing = followingData.relationships_following
+                    .filter(item => item.string_list_data && item.string_list_data[0] && item.string_list_data[0].timestamp)
+                    .sort((a, b) => a.string_list_data[0].timestamp - b.string_list_data[0].timestamp);
+                
+                let followingIndex = 0;
+                
+                for (let i = 0; i < 12; i++) {
+                    const monthStart = months[i];
+                    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59);
+                    
+                    // 해당 월에 팔로우한 사람 수 계산
+                    while (followingIndex < sortedFollowing.length) {
+                        const timestamp = sortedFollowing[followingIndex].string_list_data[0].timestamp * 1000;
+                        const followDate = new Date(timestamp);
+                        
+                        if (followDate <= monthEnd) {
+                            followingCumulative++;
+                            followingIndex++;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    followingCounts[i] = followingCumulative;
+                }
+            }
+            
+            // 팔로워 데이터 처리 (실제 타임스탬프 사용)
+            const followersCounts = new Array(12).fill(0);
+            let followersCumulative = 0;
+            
+            if (followersData && Array.isArray(followersData)) {
+                // 타임스탬프 기준 정렬
+                const sortedFollowers = followersData
+                    .filter(item => item.string_list_data && item.string_list_data[0] && item.string_list_data[0].timestamp)
+                    .sort((a, b) => a.string_list_data[0].timestamp - b.string_list_data[0].timestamp);
+                
+                let followersIndex = 0;
+                
+                for (let i = 0; i < 12; i++) {
+                    const monthStart = months[i];
+                    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59);
+                    
+                    // 해당 월에 나를 팔로우한 사람 수 계산
+                    while (followersIndex < sortedFollowers.length) {
+                        const timestamp = sortedFollowers[followersIndex].string_list_data[0].timestamp * 1000;
+                        const followDate = new Date(timestamp);
+                        
+                        if (followDate <= monthEnd) {
+                            followersCumulative++;
+                            followersIndex++;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    followersCounts[i] = followersCumulative;
+                }
+            }
+            
+            return {
+                labels: labels,
+                followingData: followingCounts,
+                followersData: followersCounts
+            };
         }
 
         let currentSortOrder = 'newest'; // 'newest' 또는 'oldest'
@@ -942,12 +1194,18 @@
 
         function showGate() {
             const overlay = document.getElementById('gateOverlay');
+            
             overlay.style.display = 'flex';
             
             // 쿠팡 링크 클릭 이벤트
             document.getElementById('coupangLink').addEventListener('click', function() {
                 setTimeout(() => {
                     overlay.style.display = 'none';
+                    
+                    // 그래프 섹션 표시
+                    const chartSection = document.getElementById('chartSection');
+                    chartSection.style.display = 'block';
+                    
                     showUnfollowersList();
                 }, 5000);
             });
@@ -982,7 +1240,17 @@
         }
 
         // 이벤트 리스너 설정
-        setupFileUpload();
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up file upload');
+            setupFileUpload();
+        });
+
+        // 즉시 실행도 추가 (DOMContentLoaded가 이미 발생한 경우를 위해)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupFileUpload);
+        } else {
+            setupFileUpload();
+        }
 
         document.getElementById('analyzeBtn').addEventListener('click', analyzeUnfollowers);
         document.getElementById('viewResultsBtn').addEventListener('click', showGate);
@@ -1002,4 +1270,6 @@
         });
     </script>
 </body>
-</html>
+</html>click', () => fileInput.click());
+            
+            uploadArea.addEventListener('
